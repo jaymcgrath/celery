@@ -36,7 +36,7 @@ from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
 from celery.worker import WorkController
 
-__all__ = ['Worker']
+__all__ = ('Worker',)
 
 logger = get_logger(__name__)
 is_jython = sys.platform.startswith('java')
@@ -277,6 +277,10 @@ def _shutdown_handler(worker, sig='TERM', how='Warm',
                 if callback:
                     callback(worker)
                 safe_say('worker: {0} shutdown (MainProcess)'.format(how))
+                signals.worker_shutting_down.send(
+                    sender=worker.hostname, sig=sig, how=how,
+                    exitcode=exitcode,
+                )
             if active_thread_count() > 1:
                 setattr(state, {'Warm': 'should_stop',
                                 'Cold': 'should_terminate'}[how], exitcode)

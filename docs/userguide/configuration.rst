@@ -83,6 +83,7 @@ rush in moving to the new settings format.
 ``CASSANDRA_READ_CONSISTENCY``         :setting:`cassandra_read_consistency`
 ``CASSANDRA_SERVERS``                  :setting:`cassandra_servers`
 ``CASSANDRA_WRITE_CONSISTENCY``        :setting:`cassandra_write_consistency`
+``CASSANDRA_OPTIONS``                  :setting:`cassandra_options`
 ``CELERY_COUCHBASE_BACKEND_SETTINGS``  :setting:`couchbase_backend_settings`
 ``CELERY_MONGODB_BACKEND_SETTINGS``    :setting:`mongodb_backend_settings`
 ``CELERY_EVENT_QUEUE_EXPIRES``         :setting:`event_queue_expires`
@@ -110,23 +111,23 @@ rush in moving to the new settings format.
 ``CELERY_SECURITY_CERT_STORE``         :setting:`security_cert_store`
 ``CELERY_SECURITY_KEY``                :setting:`security_key`
 ``CELERY_ACKS_LATE``                   :setting:`task_acks_late`
-``CELERY_ALWAYS_EAGER``                :setting:`task_always_eager`
-``CELERY_ANNOTATIONS``                 :setting:`task_annotations`
-``CELERY_MESSAGE_COMPRESSION``         :setting:`task_compression`
-``CELERY_CREATE_MISSING_QUEUES``       :setting:`task_create_missing_queues`
-``CELERY_DEFAULT_DELIVERY_MODE``       :setting:`task_default_delivery_mode`
-``CELERY_DEFAULT_EXCHANGE``            :setting:`task_default_exchange`
-``CELERY_DEFAULT_EXCHANGE_TYPE``       :setting:`task_default_exchange_type`
-``CELERY_DEFAULT_QUEUE``               :setting:`task_default_queue`
-``CELERY_DEFAULT_RATE_LIMIT``          :setting:`task_default_rate_limit`
-``CELERY_DEFAULT_ROUTING_KEY``         :setting:`task_default_routing_key`
-``[...]_EAGER_PROPAGATES_EXCEPTIONS``  :setting:`task_eager_propagates`
-``CELERY_IGNORE_RESULT``               :setting:`task_ignore_result`
+``CELERY_TASK_ALWAYS_EAGER``           :setting:`task_always_eager`
+``CELERY_TASK_ANNOTATIONS``            :setting:`task_annotations`
+``CELERY_TASK_COMPRESSION``            :setting:`task_compression`
+``CELERY_TASK_CREATE_MISSING_QUEUES``  :setting:`task_create_missing_queues`
+``CELERY_TASK_DEFAULT_DELIVERY_MODE``  :setting:`task_default_delivery_mode`
+``CELERY_TASK_DEFAULT_EXCHANGE``       :setting:`task_default_exchange`
+``CELERY_TASK_DEFAULT_EXCHANGE_TYPE``  :setting:`task_default_exchange_type`
+``CELERY_TASK_DEFAULT_QUEUE``          :setting:`task_default_queue`
+``CELERY_TASK_DEFAULT_RATE_LIMIT``     :setting:`task_default_rate_limit`
+``CELERY_TASK_DEFAULT_ROUTING_KEY``    :setting:`task_default_routing_key`
+``CELERY_TASK_EAGER_PROPAGATES``       :setting:`task_eager_propagates`
+``CELERY_TASK_IGNORE_RESULT``          :setting:`task_ignore_result`
 ``CELERY_TASK_PUBLISH_RETRY``          :setting:`task_publish_retry`
 ``CELERY_TASK_PUBLISH_RETRY_POLICY``   :setting:`task_publish_retry_policy`
-``CELERY_QUEUES``                      :setting:`task_queues`
-``CELERY_ROUTES``                      :setting:`task_routes`
-``CELERY_SEND_TASK_SENT_EVENT``        :setting:`task_send_sent_event`
+``CELERY_TASK_QUEUES``                 :setting:`task_queues`
+``CELERY_TASK_ROUTES``                 :setting:`task_routes`
+``CELERY_TASK_SEND_SENT_EVENT``        :setting:`task_send_sent_event`
 ``CELERY_TASK_SERIALIZER``             :setting:`task_serializer`
 ``CELERYD_TASK_SOFT_TIME_LIMIT``       :setting:`task_soft_time_limit`
 ``CELERYD_TASK_TIME_LIMIT``            :setting:`task_time_limit`
@@ -584,13 +585,34 @@ Can be one of the following:
 
 .. _`SQLAlchemy`: http://sqlalchemy.org
 .. _`Memcached`: http://memcached.org
-.. _`Redis`: http://redis.io
+.. _`Redis`: https://redis.io
 .. _`Cassandra`: http://cassandra.apache.org/
 .. _`Elasticsearch`: https://aws.amazon.com/elasticsearch-service/
 .. _`IronCache`: http://www.iron.io/cache
 .. _`CouchDB`: http://www.couchdb.com/
-.. _`Couchbase`: http://www.couchbase.com/
-.. _`Consul`: http://consul.io/
+.. _`Couchbase`: https://www.couchbase.com/
+.. _`Consul`: https://consul.io/
+
+
+.. setting:: result_backend_transport_options
+
+``result_backend_transport_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+A dict of additional options passed to the underlying transport.
+
+See your transport user manual for supported options (if any).
+
+Example setting the visibility timeout (supported by Redis and SQS
+transports):
+
+.. code-block:: python
+
+    result_backend_transport_options = {'visibility_timeout': 18000}  # 5 hours
+
+
 
 .. setting:: result_serializer
 
@@ -878,6 +900,16 @@ The fields of the URL are defined as follows:
     Database number to use. Default is 0.
     The db can include an optional leading slash.
 
+.. setting:: redis_backend_use_ssl
+
+``redis_backend_use_ssl``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: Disabled.
+
+The Redis backend supports SSL. The valid values of this options are the same
+as :setting:`broker_use_ssl`.
+
 .. setting:: redis_max_connections
 
 ``redis_max_connections``
@@ -1028,6 +1060,22 @@ Named arguments to pass into the authentication provider. For example:
         password: 'cassandra'
     }
 
+.. setting:: cassandra_options
+
+``cassandra_options``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: ``{}`` (empty mapping).
+
+Named arguments to pass into the ``cassandra.cluster`` class.
+
+.. code-block:: python
+
+    cassandra_options = {
+        'cql_version': '3.2.1'
+        'protocol_version': 3
+    }
+
 Example configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -1054,6 +1102,33 @@ Example configuration
 .. code-block:: python
 
     result_backend = 'elasticsearch://example.com:9200/index_name/doc_type'
+
+.. setting:: elasticsearch_retry_on_timeout
+
+``elasticsearch_retry_on_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`False`
+
+Should timeout trigger a retry on different node?
+
+.. setting:: elasticsearch_max_retries
+
+``elasticsearch_max_retries``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 3.
+
+Maximum number of retries before an exception is propagated.
+
+.. setting:: elasticsearch_timeout
+
+``elasticsearch_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: 10.0 seconds.
+
+Global timeout,used by the elasticsearch result backend.
 
 .. _conf-riak-result-backend:
 
@@ -1712,7 +1787,7 @@ Example::
 
     # Random failover strategy
     def random_failover_strategy(servers):
-        it = list(it)  # don't modify callers list
+        it = list(servers)  # don't modify callers list
         shuffle = random.shuffle
         for _ in repeat(None):
             shuffle(it)
@@ -1766,6 +1841,11 @@ Default: Disabled.
 
 Toggles SSL usage on broker connection and SSL settings.
 
+The valid values for this option vary by transport.
+
+``pyamqp``
+__________
+
 If ``True`` the connection will use SSL with default SSL settings.
 If set to a dict, will configure SSL connection according to the specified
 policy. The format used is Python's :func:`ssl.wrap_socket` options.
@@ -1792,6 +1872,21 @@ certificate authority:
     configuration won't validate the server cert at all. Please read Python
     `ssl module security
     considerations <https://docs.python.org/3/library/ssl.html#ssl-security>`_.
+
+``redis``
+_________
+
+
+The setting must be a dict the keys:
+
+*  ``ssl_cert_reqs`` (required): one of the ``SSLContext.verify_mode`` values:
+    * ``ssl.CERT_NONE``
+    * ``ssl.CERT_OPTIONAL``
+    * ``ssl.CERT_REQUIRED``
+*  ``ssl_ca_certs`` (optional): path to the CA certificate
+*  ``ssl_certfile`` (optional): path to the client certificate
+*  ``ssl_keyfile`` (optional): path to the client key
+
 
 .. setting:: broker_pool_limit
 

@@ -24,10 +24,10 @@ from .defaults import (
     DEFAULTS, SETTING_KEYS, find,
 )
 
-__all__ = [
+__all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app',
-]
+)
 
 #: Format used to generate bug-report information.
 BUGREPORT_INFO = """
@@ -70,7 +70,7 @@ FMT_REPLACE_SETTING = '{replace:<36} -> {with_}'
 
 def appstr(app):
     """String used in __repr__ etc, to id app instances."""
-    return '{0}:{1:#x}'.format(app.main or '__main__', id(app))
+    return '{0} at {1:#x}'.format(app.main or '__main__', id(app))
 
 
 class Settings(ConfigurationView):
@@ -278,10 +278,10 @@ class AppPickler(object):
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
                               config_source=None):
-        return dict(main=main, loader=loader, backend=backend, amqp=amqp,
-                    changes=changes, events=events, log=log, control=control,
-                    set_as_current=False,
-                    config_source=config_source)
+        return {'main': main, 'loader': loader, 'backend': backend,
+                'amqp': amqp, 'changes': changes, 'events': events,
+                'log': log, 'control': control, 'set_as_current': False,
+                'config_source': config_source}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)

@@ -25,7 +25,7 @@ from celery.utils.time import maybe_make_aware
 
 from . import routes as _routes
 
-__all__ = ['AMQP', 'Queues', 'task_message']
+__all__ = ('AMQP', 'Queues', 'task_message')
 
 PY3 = sys.version_info[0] == 3
 
@@ -398,7 +398,8 @@ class AMQP(object):
                    chord=None, callbacks=None, errbacks=None, reply_to=None,
                    time_limit=None, soft_time_limit=None,
                    create_sent_event=False, root_id=None, parent_id=None,
-                   shadow=None, now=None, timezone=None):
+                   shadow=None, now=None, timezone=None,
+                   **compat_kwargs):
         args = args or ()
         kwargs = kwargs or {}
         utc = self.utc
@@ -521,7 +522,7 @@ class AMQP(object):
                     exchange_type = 'direct'
 
             # convert to anon-exchange, when exchange not set and direct ex.
-            if not exchange or not routing_key and exchange_type == 'direct':
+            if (not exchange or not routing_key) and exchange_type == 'direct':
                     exchange, routing_key = '', qname
             elif exchange is None:
                 # not topic exchange, and exchange not undefined
@@ -540,7 +541,7 @@ class AMQP(object):
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
                     declare=declare, headers=headers2,
-                    properties=kwargs, retry_policy=retry_policy,
+                    properties=properties, retry_policy=retry_policy,
                 )
             ret = producer.publish(
                 body,

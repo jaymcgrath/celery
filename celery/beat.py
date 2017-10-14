@@ -2,6 +2,7 @@
 """The periodic task scheduler."""
 from __future__ import absolute_import, unicode_literals
 
+import copy
 import errno
 import heapq
 import os
@@ -31,10 +32,10 @@ from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.time import humanize_seconds
 from .utils.log import get_logger, iter_open_logger_fds
 
-__all__ = [
+__all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
     'PersistentScheduler', 'Service', 'EmbeddedService',
-]
+)
 
 event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
 
@@ -96,17 +97,18 @@ class ScheduleEntry(object):
         self.kwargs = kwargs
         self.options = options
         self.schedule = maybe_schedule(schedule, relative, app=self.app)
-        self.last_run_at = last_run_at or self._default_now()
+        self.last_run_at = last_run_at or self.default_now()
         self.total_run_count = total_run_count or 0
 
-    def _default_now(self):
+    def default_now(self):
         return self.schedule.now() if self.schedule else self.app.now()
+    _default_now = default_now  # compat
 
     def _next_instance(self, last_run_at=None):
         """Return new instance, with date and count fields updated."""
         return self.__class__(**dict(
             self,
-            last_run_at=last_run_at or self._default_now(),
+            last_run_at=last_run_at or self.default_now(),
             total_run_count=self.total_run_count + 1,
         ))
     __next__ = next = _next_instance  # for 2to3
@@ -197,6 +199,7 @@ class Scheduler(object):
                              self.max_interval)
         self.Producer = Producer or app.amqp.Producer
         self._heap = None
+        self.old_schedulers = None
         self.sync_every_tasks = (
             app.conf.beat_sync_every if sync_every_tasks is None
             else sync_every_tasks)
@@ -235,7 +238,7 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry.schedule.now().timetuple()) +
+        return (mktime(entry.default_now().timetuple()) +
                 (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
@@ -257,7 +260,9 @@ class Scheduler(object):
         adjust = self.adjust
         max_interval = self.max_interval
 
-        if self._heap is None:
+        if (self._heap is None or
+                not self.schedules_equal(self.old_schedulers, self.schedule)):
+            self.old_schedulers = copy.copy(self.schedule)
             self.populate_heap()
 
         H = self._heap
@@ -280,6 +285,15 @@ class Scheduler(object):
                 heappush(H, verify)
                 return min(verify[0], max_interval)
         return min(adjust(next_time_to_run) or max_interval, max_interval)
+
+    def schedules_equal(self, old_schedules, new_schedules):
+        if set(old_schedules.keys()) != set(new_schedules.keys()):
+            return False
+        for name, old_entry in old_schedules.items():
+            new_entry = new_schedules.get(name)
+            if not new_entry or old_entry.schedule != new_entry.schedule:
+                return False
+        return True
 
     def should_sync(self):
         return (

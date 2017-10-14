@@ -15,7 +15,7 @@ from celery import _state
 from celery import signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
 
-__all__ = ['DjangoFixup', 'fixup']
+__all__ = ('DjangoFixup', 'fixup')
 
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined
@@ -166,7 +166,7 @@ class DjangoWorkerFixup(object):
             self.close_database()
 
     def on_task_postrun(self, sender, **kwargs):
-        # See http://groups.google.com/group/django-users/
+        # See https://groups.google.com/group/django-users/
         #            browse_thread/thread/78200863d0c07c6d/
         if not getattr(sender.request, 'is_eager', False):
             self.close_database()
@@ -183,7 +183,7 @@ class DjangoWorkerFixup(object):
     def _close_database(self):
         for conn in self._db.connections.all():
             try:
-                conn.close()
+                conn.close_if_unusable_or_obsolete()
             except self.interface_errors:
                 pass
             except self.DatabaseError as exc:
@@ -193,7 +193,7 @@ class DjangoWorkerFixup(object):
 
     def close_cache(self):
         try:
-            self._cache.cache.close()
+            self._cache.close_caches()
         except (TypeError, AttributeError):
             pass
 

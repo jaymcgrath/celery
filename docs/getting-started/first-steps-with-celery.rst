@@ -78,7 +78,7 @@ the event of abrupt termination or power failures. Detailed information about us
 
 :ref:`broker-redis`
 
-.. _`Redis`: http://redis.io/
+.. _`Redis`: https://redis.io/
 
 Other brokers
 -------------
@@ -315,6 +315,7 @@ If you're configuring many settings at once you can use ``update``:
 For larger projects, a dedicated configuration module is recommended.
 Hard coding periodic task intervals and task routing options is discouraged.
 It is much better to keep these in a centralized location. This is especially
+<<<<<<< HEAD
 true for libraries, as it enables users to control how their tasks behave. 
 A centralized configuration will also allow your SysAdmin to make simple changes
 in the event of system trouble.

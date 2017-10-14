@@ -9,7 +9,7 @@ from celery.five import items, python_2_unicode_compatible
 from celery.utils.graph import DependencyGraph, GraphFormatter
 from .base import Command
 
-__all__ = ['graph']
+__all__ = ('graph',)
 
 
 class graph(Command):
@@ -161,7 +161,7 @@ class graph(Command):
             workers = args['nodes']
             threads = args.get('threads') or []
         except KeyError:
-            replies = self.app.control.inspect().stats()
+            replies = self.app.control.inspect().stats() or {}
             workers, threads = [], []
             for worker, reply in items(replies):
                 workers.append(worker)
